@@ -37,7 +37,7 @@ resource "aws_eks_cluster" "eks_cluster" {
   name     = "${var.name_prefix}-cluster"
   role_arn = aws_iam_role.eks_cluster.arn
 
-  version = "1.29" 
+  version = var.k8s_version
 
   vpc_config {
     subnet_ids = [aws_subnet.subnet1.id, aws_subnet.subnet2.id]
@@ -112,7 +112,7 @@ resource "aws_eks_node_group" "eks_node_group" {
     min_size     = 1 # Minimum node pools
   }
 
-  instance_types = ["t3.micro"] # Updated to the least expensive instance type
+  instance_types = ["${var.instance_type}"]
 
   depends_on = [
     aws_eks_cluster.eks_cluster,
