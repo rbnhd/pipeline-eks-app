@@ -26,7 +26,7 @@ env:
 
 jobs:
   aws_ci_cd:
-    name: 'Build Infrastructure with Terraform and deploy to EKS'
+    name: 'Build Infra with TF and deploy to EKS'
     runs-on: ubuntu-22.04
 
     defaults:
