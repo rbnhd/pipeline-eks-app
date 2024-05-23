@@ -10,7 +10,8 @@ terraform {
 
 terraform {
   backend "s3" {
-    bucket = "bucket-to-store-terraform-state-pipeline-eks-app"
+    # bucket = "bucket-to-store-terraform-state-pipeline-eks-app"
+    bucket = var.state_bucket
     key    = "terraform/state"
   }
 }
@@ -23,6 +24,11 @@ variable "region" {
   description = "The AWS region where resources should be created"
   type        = string
   default     = "ap-northeast-1"
+}
+
+variable "state_bucket" {
+  description = "S3 bucket to store terraform state"
+  type        = string
 }
 
 variable "name_prefix" {
