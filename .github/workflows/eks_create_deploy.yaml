@@ -1,0 +1,72 @@
+name: 'AWS EKS CI/CD Pipeline'
+
+on:
+  push:
+    branches:
+      - main
+      - "releases/*"
+    paths-ignore:
+      - '**/README.md'
+      - '**/.gitignore'
+      - 'screenshots/**'
+  pull_request:
+    branches:
+      - main
+
+env:
+  TF_VERSION: 1.8.1
+  TF_WORKSPACE: terraform                                   # Directory where TF files exist
+
+  TF_VAR_region: ${{ vars.AWS_REGION }}                     # AWS region
+  TF_VAR_state_bucket: ${{ secrets.S3_BUCKET_NAME }}        # S3 bucket to store terraform state
+  TF_VAR_cluster_name: sample-app-eks                       # The EKS cluster name
+
+  AWS_REGION: ${{ vars.AWS_REGION }}
+
+jobs:
+  aws_ci_cd:
+    name: 'Build Infrastructure with Terraform and deploy to EKS'
+    runs-on: ubuntu-22.04
+
+    defaults:
+      run:
+        shell: bash -e {0}
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+      packages: 'write'   # needed to push docker image 
+
+          
+    steps:
+    - name: Git Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ vars.AWS_REGION }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+
+    - name: Terraform Init and Apply
+      run: |
+        cd $TF_WORKSPACE 
+        terraform init
+        terraform apply -auto-approve
+
+    # Add additional steps for deploying your application, similar to your GKE workflow.
+
+
+
+
+    - name: Sleep & then Terraform Destroy
+      # set if: always()  In testing env, which means it will run even if previous steps fail.... 
+      #  ...This is usually a good practice to clean up resources even if something goes wrong.
+      if: always() 
+      run: sleep 30 && terraform -chdir=${{ env.TF_WORKSPACE }} destroy -auto-approve
