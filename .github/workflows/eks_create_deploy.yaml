@@ -19,7 +19,8 @@ env:
 
   TF_VAR_region: ${{ vars.AWS_REGION }}                     # AWS region
   TF_VAR_state_bucket: ${{ secrets.S3_BUCKET_NAME }}        # S3 bucket to store terraform state
-  TF_VAR_cluster_name: sample-app-eks                       # The EKS cluster name
+  TF_VAR_name_prefix: sample-app-eks                        # The naming prefix to use for naming the created resources (ex: sample-app-eks-subnet1 )
+
 
   AWS_REGION: ${{ vars.AWS_REGION }}
 
@@ -54,11 +55,11 @@ jobs:
       with:
         terraform_version: ${{ env.TF_VERSION }}
 
-    - name: Terraform Init and Apply
-      run: |
-        cd $TF_WORKSPACE 
-        terraform init
-        terraform apply -auto-approve
+    - name: Terraform Init and validate
+      run: terraform -chdir=${{ env.TF_WORKSPACE }}  init, fmt, validate & Plan
+
+    - name: Terraform Apply
+      run: terraform -chdir=${{ env.TF_WORKSPACE }} apply -auto-approve
 
     # Add additional steps for deploying your application, similar to your GKE workflow.
 
