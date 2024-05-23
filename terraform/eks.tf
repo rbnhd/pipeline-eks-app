@@ -54,6 +54,7 @@ resource "aws_eks_cluster" "eks_cluster" {
 
 
 
+
 #### EKS Node Group
 # Define an IAM role for the EKS node group.
 resource "aws_iam_role" "eks_node_group" {
@@ -116,4 +117,39 @@ resource "aws_eks_node_group" "eks_node_group" {
   depends_on = [
     aws_eks_cluster.eks_cluster,
   ]
+}
+
+
+
+
+#### IAM policy binding to allow EKS cluster to access S3 bucket
+# define the IAM policy that allows access to the S3 bucket
+resource "aws_iam_policy" "eks_s3_access" {
+  name        = "${var.name_prefix}-eks-s3-access"
+  description = "Policy to allow EKS node group to access a specific S3 bucket"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket",
+          "s3:PutObject",
+          // Include any other actions your application may need
+        ],
+        Effect = "Allow",
+        Resource = [
+          "arn:aws:s3:::${var.eks_bucket}",
+          "arn:aws:s3:::${var.eks_bucket}/*",
+        ],
+      },
+    ],
+  })
+}
+
+# attach this policy to the IAM role of the EKS node group:
+resource "aws_iam_role_policy_attachment" "eks_s3_access" {
+  role       = aws_iam_role.eks_node_group.name
+  policy_arn = aws_iam_policy.eks_s3_access.arn
 }
