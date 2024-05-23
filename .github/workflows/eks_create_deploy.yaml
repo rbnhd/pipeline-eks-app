@@ -63,11 +63,11 @@ jobs:
         terraform init -backend-config="bucket=${TF_VAR_state_bucket}"
         terraform validate
         terraform plan
+        cd -
 
     - name: Terraform Apply
       run: |
-        terraform apply -auto-approve
-        cd -
+        terraform -chdir=${{ env.TF_WORKSPACE }} apply -auto-approve
 
     # Add additional steps for deploying your application, similar to your GKE workflow.
 
