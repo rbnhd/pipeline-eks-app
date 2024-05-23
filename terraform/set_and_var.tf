@@ -11,7 +11,8 @@ terraform {
 terraform {
   backend "s3" {
     # bucket = "bucket-to-store-terraform-state-pipeline-eks-app"
-    bucket = var.state_bucket
+    # bucket = var.state_bucket
+    # Partial configuration: the bucket name is provided dynamically
     key    = "terraform/state"
   }
 }
