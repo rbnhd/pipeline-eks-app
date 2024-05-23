@@ -40,7 +40,7 @@ resource "aws_eks_cluster" "eks_cluster" {
   version = "1.29" 
 
   vpc_config {
-    subnet_ids = [aws_subnet.subnet.id]
+    subnet_ids = [aws_subnet.subnet1.id, aws_subnet.subnet2.id]
 
     # Specify additional subnet IDs if necessary
     # Public access is enabled by default; specify endpoint_private_access and endpoint_public_access as needed
