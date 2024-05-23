@@ -34,3 +34,13 @@ variable "eks_bucket" {
   description = "S3 bucket for the EKS app to access"
   type        = string
 }
+
+variable "k8s_version" {
+  description = "The kubernetes version to use for EKS"
+  type        = string
+}
+
+variable "instance_type" {
+  description = "The Compute engine instance type to use in EKS node pool"
+  type        = string
+}
