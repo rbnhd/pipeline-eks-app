@@ -10,13 +10,13 @@ terraform {
 
 terraform {
   backend "s3" {
-    bucket         = "bucket-to-store-terraform-state-pipeline-eks-app" 
-    key            = "terraform/state"
+    bucket = "bucket-to-store-terraform-state-pipeline-eks-app"
+    key    = "terraform/state"
   }
 }
 
 provider "aws" {
-  region  = var.region
+  region = var.region
 }
 
 variable "region" {
@@ -26,6 +26,11 @@ variable "region" {
 }
 
 variable "name_prefix" {
-  description = "he naming prefix to use for naming the created resources (ex: sample-app-eks-subnet1)"
+  description = "The naming prefix to use for naming the created resources (ex: sample-app-eks-subnet1)"
+  type        = string
+}
+
+variable "eks_bucket" {
+  description = "S3 bucket for the EKS app to access"
   type        = string
 }

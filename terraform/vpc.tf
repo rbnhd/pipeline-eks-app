@@ -11,7 +11,7 @@ resource "aws_vpc" "vpc" {
 resource "aws_subnet" "subnet" {
   vpc_id            = aws_vpc.vpc.id
   cidr_block        = "10.0.1.0/24"
-  availability_zone = "${var.region}a" 
+  availability_zone = "${var.region}a"
 
   tags = {
     Name = "${var.name_prefix}-subnet"
@@ -50,11 +50,11 @@ resource "aws_security_group" "allow_ssh" {
   vpc_id      = aws_vpc.vpc.id
 
   ingress {
-    description      = "SSH from anywhere"
-    from_port        = 22
-    to_port          = 22
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
+    description = "SSH from anywhere"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {

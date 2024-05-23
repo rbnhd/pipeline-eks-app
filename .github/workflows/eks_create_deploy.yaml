@@ -18,9 +18,9 @@ env:
   TF_WORKSPACE: terraform                                   # Directory where TF files exist
 
   TF_VAR_region: ${{ vars.AWS_REGION }}                     # AWS region
-  TF_VAR_state_bucket: ${{ secrets.S3_BUCKET_NAME }}        # S3 bucket to store terraform state
+  TF_VAR_state_bucket: ${{ secrets.TF_STATE_BUCKET}}        # S3 bucket to store terraform state
   TF_VAR_name_prefix: sample-app-eks                        # The naming prefix to use for naming the created resources (ex: sample-app-eks-subnet1 )
-
+  TF_VAR_eks_bucket: ${{ secrets.EKS_BUCKET_NAME }}         # S3 bucket for the EKS app to access
 
   AWS_REGION: ${{ vars.AWS_REGION }}
 
