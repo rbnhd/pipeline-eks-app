@@ -60,7 +60,7 @@ jobs:
     - name: Terraform Init and validate
       run: |
         cd $TF_WORKSPACE
-        terraform init -backend-config="bucket=$TF_VAR_state_bucket"
+        terraform init -backend-config="bucket=${TF_VAR_state_bucket}"
         terraform validate
         terraform plan
         cd -

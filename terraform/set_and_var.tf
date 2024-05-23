@@ -8,12 +8,13 @@ terraform {
   required_version = ">=1.0"
 }
 
+# Although it's possible to create the backend storage location at runtime itself, it's a good idea to create the bucket...
+# ... where state file will be stored beforehand and set the bucket as the location for TF state file.....
+# .... so that resource state are always consistent
 terraform {
   backend "s3" {
-    # bucket = "bucket-to-store-terraform-state-pipeline-eks-app"
-    # bucket = var.state_bucket
-    # Partial configuration: the bucket name is provided dynamically
-    key    = "terraform/state"
+    # Partial configuration: the bucket name is provided dynamically during terraform init as param -backend-config=${}
+    key = "terraform/state"
   }
 }
 
