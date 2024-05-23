@@ -56,7 +56,12 @@ jobs:
         terraform_version: ${{ env.TF_VERSION }}
 
     - name: Terraform Init and validate
-      run: terraform -chdir=${{ env.TF_WORKSPACE }}  init, fmt, validate & Plan
+      run: |
+        cd $TF_WORKSPACE
+        terraform init
+        terraform validate
+        terraform plan
+        cd -
 
     - name: Terraform Apply
       run: terraform -chdir=${{ env.TF_WORKSPACE }} apply -auto-approve
