@@ -73,7 +73,6 @@ jobs:
 
 
 
-
     - name: Sleep & then Terraform Destroy
       # set if: always()  In testing env, which means it will run even if previous steps fail.... 
       #  ...This is usually a good practice to clean up resources even if something goes wrong.
