@@ -69,7 +69,33 @@ jobs:
       run: |
         terraform -chdir=${{ env.TF_WORKSPACE }} apply -auto-approve
 
-    # Add additional steps for deploying your application, similar to your GKE workflow.
+    # Add additional steps for deploying your application, similar
+
+
+
+    - name: Install and configure kubectl
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        sudo mv kubectl /usr/local/bin/
+        aws eks update-kubeconfig --region $AWS_REGION --name $TF_VAR_name_prefix-cluster
+
+    - name: Create MinIO credentials secret
+      run: |
+        kubectl create secret generic minio-credentials --from-literal=access_key=${{ secrets.AWS_ACCESS_KEY_ID }} --from-literal=secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    - name: Deploy MinIO
+      run: |
+        kubectl apply -f ./k8s-app/minio.yaml
+
+    - name: Get Node Public IP and Port
+      run: |
+        kubectl get nodes -o wide
+        # echo "Node Public IP: $(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')"
+        # echo "MinIO Service Port: $(kubectl get svc minio-service -o jsonpath='{.spec.ports[0].nodePort}')"
+
+
+
 
 
 
@@ -77,4 +103,4 @@ jobs:
       # set if: always()  In testing env, which means it will run even if previous steps fail.... 
       #  ...This is usually a good practice to clean up resources even if something goes wrong.
       if: always() 
-      run: sleep 30 && terraform -chdir=${{ env.TF_WORKSPACE }} destroy -auto-approve
+      run: sleep 60 && terraform -chdir=${{ env.TF_WORKSPACE }} destroy -auto-approve
