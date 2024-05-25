@@ -64,15 +64,24 @@ resource "aws_route_table_association" "rta2" {
   route_table_id = aws_route_table.rt.id
 }
 
-resource "aws_security_group" "allow_ssh" {
-  name        = "${var.name_prefix}-allow-ssh"
-  description = "Allow SSH inbound traffic"
+
+resource "aws_security_group" "allow_http" {
+  name        = "${var.name_prefix}-allow-http"
+  description = "Allow HTTP inbound traffic"
   vpc_id      = aws_vpc.vpc.id
 
   ingress {
-    description = "SSH from anywhere"
-    from_port   = 22
-    to_port     = 22
+    description = "HTTP from anywhere"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "HTTPS from anywhere"
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -86,6 +95,6 @@ resource "aws_security_group" "allow_ssh" {
   }
 
   tags = {
-    Name = "${var.name_prefix}-sg-ssh"
+    Name = "${var.name_prefix}-sg-http"
   }
 }

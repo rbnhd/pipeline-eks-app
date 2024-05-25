@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      serviceAccountName: minio-serviceaccount   # Service account used by minio to access a particular S3 bucket
+      containers:
+      - name: minio
+        image: minio/minio
+        args:
+        - server
+        - /data
+        env:
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: access_key
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: secret_key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-service
+spec:
+  selector:
+    app: minio
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 9000
+  type: LoadBalancer
