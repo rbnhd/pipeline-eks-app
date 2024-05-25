@@ -103,6 +103,6 @@ jobs:
       #  ...This is usually a good practice to clean up resources even if something goes wrong.
       if: always() 
       run: |
-        sleep 300 
+        sleep 60 
         kubectl delete svc minio-service
         terraform -chdir=${{ env.TF_WORKSPACE }} destroy -auto-approve

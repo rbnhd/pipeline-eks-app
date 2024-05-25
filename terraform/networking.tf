@@ -6,9 +6,6 @@ resource "aws_vpc" "vpc" {
   tags = {
     Name = "${var.name_prefix}-vpc"
   }
-  depends_on = [
-    aws_eks_cluster.eks_cluster,
-  ]
 }
 
 ##### Amazon EKS requires subnets in at least two different AZs to ensure high availability of the Kubernetes control plane.
