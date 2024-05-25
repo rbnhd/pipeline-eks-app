@@ -88,9 +88,10 @@ jobs:
       run: |
         kubectl apply -f ./k8s-app/minio.yaml
 
-    - name: Get Node Public IP and Port
+    - name: Get the endpoint of the load balancer created for MinIO service
       run: |
         kubectl get nodes -o wide
+        kubectl get svc minio-service
         # echo "Node Public IP: $(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')"
         # echo "MinIO Service Port: $(kubectl get svc minio-service -o jsonpath='{.spec.ports[0].nodePort}')"
 
@@ -103,6 +104,6 @@ jobs:
       #  ...This is usually a good practice to clean up resources even if something goes wrong.
       if: always() 
       run: |
-        sleep 60 
+        sleep 900
         kubectl delete svc minio-service
         terraform -chdir=${{ env.TF_WORKSPACE }} destroy -auto-approve
