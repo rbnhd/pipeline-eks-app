@@ -148,6 +148,13 @@ resource "aws_iam_role_policy_attachment" "eks_s3_access" {
 
 
 
+##### Handle IAM for minio service inside EKS, to access a specific S3 bucket
+data "aws_caller_identity" "current" {}
+
+data "aws_eks_cluster" "cluster" {
+  name = aws_eks_cluster.eks_cluster.name
+}
+
 ##### This role will be associated with the service account used by MinIO deployment on EKS. 
 ##### The trust policy of this IAM role will allow the sts:AssumeRoleWithWebIdentity action for the EKS cluster's OIDC provider.
 data "aws_iam_policy_document" "assume_role_policy" {
