@@ -1,4 +1,4 @@
-name: 'AWS EKS CI/CD Pipeline'
+name: 'AWS EKS Minio App'
 
 on:
   push:
@@ -16,7 +16,6 @@ on:
 env:
   TF_VERSION: 1.8.1
   TF_WORKSPACE: terraform                                   # Directory where TF files exist
-
   TF_VAR_region: ${{ vars.AWS_REGION }}                     # AWS region
   TF_VAR_state_bucket: ${{ secrets.TF_STATE_BUCKET}}        # S3 bucket to store terraform state
   TF_VAR_name_prefix: sample-app-eks                        # The naming prefix to use for naming the created resources (ex: sample-app-eks-subnet1 )
@@ -28,19 +27,16 @@ env:
 
 jobs:
   aws_ci_cd:
-    name: 'Build Infra with TF and deploy to EKS'
+    name: 'Build Infra with TF and deploy minio to EKS'
     runs-on: ubuntu-22.04
-
     defaults:
       run:
         shell: bash -e {0}
-
     permissions:
       contents: 'read'
       id-token: 'write'
-      packages: 'write'   # needed to push docker image 
 
-          
+
     steps:
     - name: Git Checkout
       uses: actions/checkout@v4
@@ -65,60 +61,57 @@ jobs:
         terraform plan
         cd -
 
-
-    # - name: Terraform Apply and get Output
-    #   id: tf_apply
-    #   run: |
-    #     cd $TF_WORKSPACE
-    #     terraform apply -auto-approve
-    #     MINIO_IAM_ROLE_ARN=$(terraform output -raw minio_role_arn)
-    #     echo "MINIO_IAM_ROLE_ARN=$MINIO_IAM_ROLE_ARN" >> $GITHUB_ENV
-    #     echo "::set-output name=MINIO_IAM_ROLE_ARN::$MINIO_IAM_ROLE_ARN"
-    #     cd -
+    - name: Terraform Apply and get Output
+      id: tf_apply
+      run: |
+        cd $TF_WORKSPACE
+        terraform apply -auto-approve
+        echo "MINIO_IAM_ROLE_ARN=$(terraform output -raw minio_role_arn)" >> $GITHUB_ENV
+        cd -
 
 
 
-    # - name: Install and configure kubectl
-    #   run: |
-    #     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-    #     chmod +x kubectl
-    #     sudo mv kubectl /usr/local/bin/
-    #     aws eks update-kubeconfig --region $AWS_REGION --name ${{ env.TF_VAR_name_prefix }}-cluster
+    - name: Install and configure kubectl
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        sudo mv kubectl /usr/local/bin/
+        aws eks update-kubeconfig --region $AWS_REGION --name ${{ env.TF_VAR_name_prefix }}-cluster
 
 
-    # # Create a Kubernetes service account to be used by minio service; and associate it with the IAM role granted to EKS. 
-    # - name: Create MinIO service account
-    #   run: |
-    #     kubectl create serviceaccount minio-serviceaccount
-    #     kubectl annotate serviceaccount minio-serviceaccount eks.amazonaws.com/role-arn=${{ steps.tf_apply.outputs.MINIO_IAM_ROLE_ARN }}
+    # Create a Kubernetes service account to be used by minio service; and associate it with the IAM role granted to EKS.
+    - name: Create MinIO service account
+      run: |
+        kubectl create serviceaccount minio-serviceaccount
+        kubectl annotate serviceaccount minio-serviceaccount eks.amazonaws.com/role-arn=$MINIO_IAM_ROLE_ARN
 
-    # # MinIO requires an access key and secret key for its own user authentication. These keys are not related to AWS credentials and are used to access the MinIO server itself. 
-    # # If we don't provide these, MinIO will generate random keys, but it's better to set them explicitly so we know what they are.
-    # - name: Create MinIO credentials secret
-    #   run: |
-    #     kubectl create secret generic minio-credentials --from-literal=access_key=${{ secrets.MINIO_ACCESS_KEY }} --from-literal=secret_key=${{ secrets.MINIO_SECRET_KEY }}
-    
-  
+    # MinIO requires an access key and secret key for its own user authentication. These keys are not related to AWS credentials and are used to access the MinIO server itself.
+    # If we don't provide these, MinIO will generate random keys, but it's better to set them explicitly so we know what they are.
+    - name: Create MinIO credentials secret
+      run: |
+        kubectl create secret generic minio-credentials --from-literal=access_key=${{ secrets.MINIO_ACCESS_KEY }} --from-literal=secret_key=${{ secrets.MINIO_SECRET_KEY }}
 
-    # - name: Deploy MinIO
-    #   run: |
-    #     kubectl apply -f ./k8s-app/minio.yaml
 
-    # - name: Get the endpoint of the load balancer created for MinIO service
-    #   run: |
-    #     kubectl get nodes -o wide
-    #     kubectl get svc minio-service
+
+    - name: Deploy MinIO on EKS
+      run: |
+        kubectl apply -f ./k8s-app/minio.yaml
+
+    - name: Get the endpoint of the load balancer created for MinIO service
+      run: |
+        kubectl get nodes -o wide
+        kubectl get svc minio-service
 
 
 
 
 
-    # # k8s service is of type LoadBalancer, so it should be deleted to delete the AWS Load balancer created. Or TF destroy will fail
-    # - name: Sleep & then Delete MinIO Service and Terraform Destroy
-    #   # set if: always()  In testing env, which means it will run even if previous steps fail.... 
-    #   #  ...This is usually a good practice to clean up resources even if something goes wrong.
-    #   if: always() 
-    #   run: |
-    #     sleep 900
-    #     kubectl delete svc minio-service
-    #     terraform -chdir=${{ env.TF_WORKSPACE }} destroy -auto-approve
+    # k8s service is of type LoadBalancer, so it should be deleted to delete the AWS Load balancer created.
+    - name: Sleep & then Delete MinIO Service and Terraform Destroy
+      # set if: always()  In testing env, which means it will run even if previous steps fail....
+      #  ...This is usually a good practice to clean up resources even if something goes wrong.
+      if: always()
+      run: |
+        sleep 900
+        kubectl delete svc minio-service
+        terraform -chdir=${{ env.TF_WORKSPACE }} destroy -auto-approve
