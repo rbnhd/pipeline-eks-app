@@ -91,18 +91,13 @@ jobs:
       run: |
         kubectl create secret generic minio-credentials --from-literal=access_key=${{ secrets.MINIO_ACCESS_KEY }} --from-literal=secret_key=${{ secrets.MINIO_SECRET_KEY }}
 
-
-
     - name: Deploy MinIO on EKS
       run: |
         kubectl apply -f ./k8s-app/minio.yaml
 
     - name: Get the endpoint of the load balancer created for MinIO service
       run: |
-        kubectl get nodes -o wide
         kubectl get svc minio-service
-
-
 
 
 
@@ -112,6 +107,6 @@ jobs:
       #  ...This is usually a good practice to clean up resources even if something goes wrong.
       if: always()
       run: |
-        sleep 900
+        sleep 600
         kubectl delete svc minio-service
         terraform -chdir=${{ env.TF_WORKSPACE }} destroy -auto-approve
