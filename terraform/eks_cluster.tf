@@ -29,7 +29,6 @@ resource "aws_iam_role_policy_attachment" "eks_vpc_resource_controller" {
   role       = aws_iam_role.eks_cluster.name
 }
 
-
 # define the EKS cluster itself.
 resource "aws_eks_cluster" "eks_cluster" {
   name     = "${var.name_prefix}-cluster"
@@ -89,7 +88,6 @@ resource "aws_iam_instance_profile" "eks_node_group" {
   role = aws_iam_role.eks_node_group.name
 }
 
-
 # create the node group.
 resource "aws_eks_node_group" "eks_node_group" {
   cluster_name    = aws_eks_cluster.eks_cluster.name
@@ -128,7 +126,6 @@ resource "aws_iam_policy" "eks_s3_access" {
           "s3:GetObject",
           "s3:ListBucket",
           "s3:PutObject",
-          // Include any other actions your application may need
         ],
         Effect = "Allow",
         Resource = [
