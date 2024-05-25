@@ -21,8 +21,8 @@ env:
   TF_VAR_state_bucket: ${{ secrets.TF_STATE_BUCKET}}        # S3 bucket to store terraform state
   TF_VAR_name_prefix: sample-app-eks                        # The naming prefix to use for naming the created resources (ex: sample-app-eks-subnet1 )
   TF_VAR_eks_bucket: ${{ secrets.EKS_BUCKET_NAME }}         # S3 bucket for the EKS app to access
-  TF_VAR_k8s_version: "1.29"                                # The kubernetes version to use for EKS
-  TF_VAR_instance_type: "t3.medium"                          # The Compute engine instance type to use in EKS node pool, using here the least expensive instance type
+  TF_VAR_k8s_version: "1.30"                                # The kubernetes version to use for EKS
+  TF_VAR_instance_type: "t3.medium"                         # The Compute engine instance type to use in EKS node pool, using here the least expensive instance type
 
   AWS_REGION: ${{ vars.AWS_REGION }}
 
