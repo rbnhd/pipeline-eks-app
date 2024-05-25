@@ -65,11 +65,16 @@ jobs:
         terraform plan
         cd -
 
-    # - name: Terraform Apply
-    #   run: |
-    #     terraform -chdir=${{ env.TF_WORKSPACE }} apply -auto-approve
 
-    # # Add additional steps for deploying your application, similar
+    # - name: Terraform Apply and get Output
+    #   id: tf_apply
+    #   run: |
+    #     cd $TF_WORKSPACE
+    #     terraform apply -auto-approve
+    #     MINIO_IAM_ROLE_ARN=$(terraform output -raw minio_role_arn)
+    #     echo "MINIO_IAM_ROLE_ARN=$MINIO_IAM_ROLE_ARN" >> $GITHUB_ENV
+    #     echo "::set-output name=MINIO_IAM_ROLE_ARN::$MINIO_IAM_ROLE_ARN"
+    #     cd -
 
 
 
@@ -85,7 +90,7 @@ jobs:
     # - name: Create MinIO service account
     #   run: |
     #     kubectl create serviceaccount minio-serviceaccount
-    #     kubectl annotate serviceaccount minio-serviceaccount eks.amazonaws.com/role-arn=IAM_ROLE_ARN
+    #     kubectl annotate serviceaccount minio-serviceaccount eks.amazonaws.com/role-arn=${{ steps.tf_apply.outputs.MINIO_IAM_ROLE_ARN }}
 
     # # MinIO requires an access key and secret key for its own user authentication. These keys are not related to AWS credentials and are used to access the MinIO server itself. 
     # # If we don't provide these, MinIO will generate random keys, but it's better to set them explicitly so we know what they are.
