@@ -183,3 +183,8 @@ resource "aws_iam_role_policy_attachment" "minio_s3_access" {
   role       = aws_iam_role.minio_role.name
   policy_arn = aws_iam_policy.eks_s3_access.arn
 }
+
+output "minio_role_arn" {
+  value       = aws_iam_role.minio_role.arn
+  description = "The ARN of the IAM role associated with the MinIO service account."
+}
