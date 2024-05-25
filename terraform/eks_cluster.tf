@@ -162,12 +162,12 @@ data "aws_iam_policy_document" "assume_role_policy" {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     effect  = "Allow"
     principals {
-      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/oidc.eks.${var.region}.amazonaws.com/id/${data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer_id}"]
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer}"]
       type        = "Federated"
     }
     condition {
       test     = "StringEquals"
-      variable = "${replace(data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer, "https://", "")}:sub"
+      variable = "${data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer}:sub"
       values   = ["system:serviceaccount:default:minio-serviceaccount"]
     }
   }
