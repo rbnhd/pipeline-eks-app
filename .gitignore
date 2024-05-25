@@ -35,3 +35,4 @@ terraform.rc
 
 # Local files not intended to be tracked by Git
 local
+ATTENTION.md
