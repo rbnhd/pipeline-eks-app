@@ -2,7 +2,6 @@
 # add the necessary IAM roles and policies for your EKS cluster.
 resource "aws_iam_role" "eks_cluster" {
   name = "${var.name_prefix}-eks-cluster-role"
-
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -15,7 +14,6 @@ resource "aws_iam_role" "eks_cluster" {
       },
     ]
   })
-
   tags = {
     Name = "${var.name_prefix}-eks-cluster-role"
   }
@@ -36,16 +34,11 @@ resource "aws_iam_role_policy_attachment" "eks_vpc_resource_controller" {
 resource "aws_eks_cluster" "eks_cluster" {
   name     = "${var.name_prefix}-cluster"
   role_arn = aws_iam_role.eks_cluster.arn
-
-  version = var.k8s_version
-
+  version  = var.k8s_version
   vpc_config {
-    subnet_ids = [aws_subnet.subnet1.id, aws_subnet.subnet2.id]
-
-    # Specify additional subnet IDs if necessary
-    # Public access is enabled by default; specify endpoint_private_access and endpoint_public_access as needed
+    subnet_ids         = [aws_subnet.subnet1.id, aws_subnet.subnet2.id]
+    security_group_ids = [aws_security_group.allow_http.id]
   }
-
   depends_on = [
     aws_iam_role_policy_attachment.eks_cluster_policy,
     aws_iam_role_policy_attachment.eks_vpc_resource_controller,
@@ -59,7 +52,6 @@ resource "aws_eks_cluster" "eks_cluster" {
 # Define an IAM role for the EKS node group.
 resource "aws_iam_role" "eks_node_group" {
   name = "${var.name_prefix}-eks-node-group-role"
-
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -72,7 +64,6 @@ resource "aws_iam_role" "eks_node_group" {
       },
     ]
   })
-
   tags = {
     Name = "${var.name_prefix}-eks-node-group-role"
   }
@@ -123,6 +114,7 @@ resource "aws_eks_node_group" "eks_node_group" {
 
 
 #### IAM policy binding to allow EKS cluster to access S3 bucket
+#### The same policy will also be used to allow Minio to access this particular S3 bucket
 # define the IAM policy that allows access to the S3 bucket
 resource "aws_iam_policy" "eks_s3_access" {
   name        = "${var.name_prefix}-eks-s3-access"
@@ -151,5 +143,36 @@ resource "aws_iam_policy" "eks_s3_access" {
 # attach this policy to the IAM role of the EKS node group:
 resource "aws_iam_role_policy_attachment" "eks_s3_access" {
   role       = aws_iam_role.eks_node_group.name
+  policy_arn = aws_iam_policy.eks_s3_access.arn
+}
+
+
+
+##### This role will be associated with the service account used by MinIO deployment on EKS. 
+##### The trust policy of this IAM role will allow the sts:AssumeRoleWithWebIdentity action for the EKS cluster's OIDC provider.
+data "aws_iam_policy_document" "assume_role_policy" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    effect  = "Allow"
+    principals {
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/oidc.eks.${var.region}.amazonaws.com/id/${data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer_id}"]
+      type        = "Federated"
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "${replace(data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer, "https://", "")}:sub"
+      values   = ["system:serviceaccount:default:minio-serviceaccount"]
+    }
+  }
+}
+
+# This creates an IAM role that trusts the EKS cluster's OIDC provider and can be assumed by a service account named minio-serviceaccount in the default namespace.
+resource "aws_iam_role" "minio_role" {
+  name               = "${var.name_prefix}-minio-role"
+  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "minio_s3_access" {
+  role       = aws_iam_role.minio_role.name
   policy_arn = aws_iam_policy.eks_s3_access.arn
 }
