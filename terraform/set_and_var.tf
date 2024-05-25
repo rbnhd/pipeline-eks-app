@@ -28,11 +28,6 @@ variable "region" {
   default     = "ap-northeast-1"
 }
 
-variable "state_bucket" {
-  description = "S3 bucket to store terraform state"
-  type        = string
-}
-
 variable "name_prefix" {
   description = "The naming prefix to use for naming the created resources (ex: sample-app-eks-subnet1)"
   type        = string
