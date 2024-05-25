@@ -34,6 +34,7 @@ The pipeline uses the following key technologies:
 - **[Terraform](https://www.terraform.io/)**: An Infrastructure as Code (IaC) tool used to provision and manage the infrastructure on AWS.
 - **[Kubernetes (EKS)](https://aws.amazon.com/eks/)**: A container orchestration platform, used here via Amazon Elastic Kubernetes Service (EKS), to manage and automate the deployment of the Docker containers.
 - **[GitHub Actions](https://github.com/features/actions)**: A CI/CD platform used to automate the software development workflow.
+- **[MinIO](https://github.com/minio/minio)**: A Object Storage. It's API compatible with Amazon S3 cloud storage service. 
 
 ## Getting Started
 
@@ -62,7 +63,7 @@ In addition, you need to set the following variables at the repository level:
 
 ### Usage
 
-Once you've set the necessary secrets, you can deploy the pipeline by pushing to the `main` or `releases/*` branches of your repository. This will trigger the GitHub Actions workflow, which will then deploy your application to an EKS cluster on AWS.
+Once you've set the necessary secrets, you can deploy the pipeline by pushing to the `main` or `releases/*` branches of your repository. This will trigger the **[GitHub Actions](./.github/workflows/eks_create_deploy.yaml)** workflow, which will then deploy your application to an EKS cluster on AWS.
 
 
 
