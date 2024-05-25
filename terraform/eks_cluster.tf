@@ -107,8 +107,8 @@ resource "aws_eks_node_group" "eks_node_group" {
   subnet_ids      = [aws_subnet.subnet1.id, aws_subnet.subnet2.id]
 
   scaling_config {
-    desired_size = 1
-    max_size     = 1 # Maximum node pools
+    desired_size = 2 # Keep two node pools desired for high availability
+    max_size     = 3 # Maximum node pools
     min_size     = 1 # Minimum node pools
   }
 
