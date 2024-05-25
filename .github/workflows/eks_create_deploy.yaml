@@ -6,7 +6,7 @@ on:
       - main
       - "releases/*"
     paths-ignore:
-      - '**/README.md'
+      - '**README.md'
       - '**/.gitignore'
       - 'screenshots/**'
   pull_request:
