@@ -78,7 +78,7 @@ jobs:
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/
-        aws eks update-kubeconfig --region $AWS_REGION --name $TF_VAR_name_prefix-cluster
+        aws eks update-kubeconfig --region $AWS_REGION --name ${{ env.TF_VAR_name_prefix }}-cluster
 
     - name: Create MinIO credentials secret
       run: |
@@ -104,6 +104,6 @@ jobs:
       #  ...This is usually a good practice to clean up resources even if something goes wrong.
       if: always() 
       run: |
-        sleep 900
+        sleep 3600
         kubectl delete svc minio-service
         terraform -chdir=${{ env.TF_WORKSPACE }} destroy -auto-approve
