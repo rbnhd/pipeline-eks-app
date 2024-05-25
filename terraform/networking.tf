@@ -6,6 +6,9 @@ resource "aws_vpc" "vpc" {
   tags = {
     Name = "${var.name_prefix}-vpc"
   }
+  depends_on = [
+    aws_eks_cluster.eks_cluster,
+  ]
 }
 
 ##### Amazon EKS requires subnets in at least two different AZs to ensure high availability of the Kubernetes control plane.
@@ -19,6 +22,14 @@ resource "aws_subnet" "subnet1" {
   tags = {
     Name = "${var.name_prefix}-subnet1"
   }
+  ##### A common known issue with TF regarding eks
+  # when an EKS cluster is created, AWS implicitly creates an Elastic Network Interface (ENI).
+  # These ENIs are associated with subnets which prevents the subnets and VPC from being deleted until the ENIs are deleted. 
+  # However, Terraform is not aware of these ENIs, so it doesn't know that it needs to delete the EKS cluster before it can delete the VPC and subnets.
+  # Solution: Add explicit dependencies in Terraform code to ensure that the EKS cluster is deleted before the VPC and subnets.
+  depends_on = [
+    aws_eks_cluster.eks_cluster,
+  ]
 }
 
 # Additional subnet in a different AZ
@@ -31,6 +42,9 @@ resource "aws_subnet" "subnet2" {
   tags = {
     Name = "${var.name_prefix}-subnet2"
   }
+  depends_on = [
+    aws_eks_cluster.eks_cluster,
+  ]
 }
 
 resource "aws_internet_gateway" "igw" {
