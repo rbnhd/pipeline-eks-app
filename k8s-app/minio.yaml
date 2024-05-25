@@ -7,11 +7,14 @@ spec:
   selector:
     matchLabels:
       app: minio
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
         app: minio
     spec:
+      serviceAccountName: minio-serviceaccount   # Service account used by minio to access a particular S3 bucket
       containers:
       - name: minio
         image: minio/minio
