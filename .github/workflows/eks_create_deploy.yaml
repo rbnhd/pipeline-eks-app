@@ -104,13 +104,14 @@ jobs:
     # ##### A common known issue with TF regarding eks
     # # when an EKS cluster is created, AWS implicitly creates an Elastic Network Interface (ENI).
     # # These ENIs are associated with subnets which prevents the subnets and VPC from being deleted until the ENIs are deleted. 
-    # # However, Terraform is not aware of these ENIs, so it doesn't know that it needs to delete the EKS cluster before it can delete the VPC and subnets.
+    # # However, Terraform is not aware of these ENIs, so it doesn't know that it needs to delete the ENIs before it can delete the VPC and subnets.
+    # # Planning to raise this issue on ASAP on https://github.com/hashicorp/terraform/issues
     # # Solution: k8s service is of type LoadBalancer, so it should be deleted to delete the AWS Load balancer created.
     - name: Sleep & then Delete MinIO Service and Terraform Destroy
       # set if: always()  In testing env, which means it will run even if previous steps fail....
       #  ...This is usually a good practice to clean up resources even if something goes wrong.
       if: always()
       run: |
-        sleep 600
+        sleep 60   # Put sleep duration based on use case basis
         kubectl delete svc minio-service
         terraform -chdir=${{ env.TF_WORKSPACE }} destroy -auto-approve
