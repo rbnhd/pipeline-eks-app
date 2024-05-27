@@ -77,52 +77,52 @@ GitHub ActionsとTerraFormを用いてデプロイされるAmazon Elastic Kubern
 
 1. **Checkout**: GitHubリポジトリからコードをチェックアウトします。
 2. **AWS資格情報の設定**: リポジトリシークレットに保存されたアクセスキーIDとシークレットアクセスキーを使用してAWSに認証します。
-    ```
+    ```yaml
     uses: aws-actions/configure-aws-credentials@v4
     ```
 3. **Terraformの設定**: ランナー上でTerraformを設定します。 (actions [hashicorp/setup-terraform](https://github.com/hashicorp/setup-terraform)を使用)
-    ```
+    ```yaml
     uses: hashicorp/setup-terraform@v3
     with:
       terraform_version: ${{ env.TF_VERSION }}
     ```
 4. **Terraformの初期化と検証**: Terraformを初期化し、Terraformの状態ファイル用のバックエンドS3バケットを設定し、Terraformの設定を検証し、Terraformのプランを作成します。
-    ```
+    ```yaml
     terraform init -backend-config="bucket=${TF_VAR_state_bucket}"
     terraform validate
     terraform plan
     ```
 5. **Terraformの適用と出力の取得**: Terraformの設定を適用してAWS上にEKSクラスターと関連リソースを作成します。MinIOのIAMロールのARNをキャプチャし、それを環境変数として設定します。
-    ```
+    ```yaml
     terraform apply -auto-approve
     echo "MINIO_IAM_ROLE_ARN=$(terraform output -raw minio_role_arn)" >> $GITHUB_ENV
     ```
 6. **kubectlのインストールと設定**: ランナー上に`kubectl`をインストールし、EKSクラスターにアクセスするための情報でkubeconfigファイルを更新します。
-    ```
+    ```yaml
     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
     chmod +x kubectl
     sudo mv kubectl /usr/local/bin/
     aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
     ```
 7. **MinIOサービスアカウントの作成**: Kubernetesのサービスアカウントを作成し、MinIOのIAMロールのARNでそれを注釈付けします。これは**minioが特定のS3バケットにアクセスする**ために重要です。このサービスアカウントはOIDCを使用してEKSクラスターに割り当てられたロールを引き受けます。
-    ```
+    ```yaml
     kubectl create serviceaccount minio-serviceaccount
     kubectl annotate serviceaccount minio-serviceaccount eks.amazonaws.com/role-arn=$MINIO_IAM_ROLE_ARN
     ```
 8. **MinIO認証情報シークレットの作成**: MinIOのアクセスキーとシークレットキーを保持するKubernetesシークレットを作成します。
-    ```
+    ```yaml
     kubectl create secret generic minio-credentials --params VALUE
     ```
 9. **EKS上でのMinIOのデプロイ**: Kubernetesのマニフェストを使用してEKSクラスターにMinIOサービスをデプロイします。
-    ```
+    ```yaml
     kubectl apply -f PATH_TO_MINIO_DEPLOYMENT_FILE
     ```
 10. **MinIOサービス用に作成されたロードバランサーのエンドポイントの取得**: MinIOサービス用に作成されたロードバランサーのエンドポイントを取得します。
-    ```
+    ```yaml
     kubectl get svc minio-service
     ```
 11. **Sleep & MinIOサービスの削除とTerraform Destroy**: 一定期間待った後、コストを避けるためにTerraformを使用してEKSクラスターと関連リソースを破壊します。
-    ```
+    ```yaml
     if: always() 
     run: sleep 600 && terraform destroy -auto-approve
     ```
