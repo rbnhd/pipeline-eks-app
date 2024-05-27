@@ -69,7 +69,7 @@ Once you've set the necessary secrets, you can deploy the pipeline by pushing to
 
 ## Pipeline Explanation
 
-The pipeline is defined in the [eks_create_deploy.yaml](./.github/workflows/eks_create_deploy.yaml) file in this repository.
+**:bangbang: NOTE** The pipeline is run using **GitHub Actions** and is defined in the [eks_create_deploy.yaml](./.github/workflows/eks_create_deploy.yaml) file in this repository.
   - The pipeline is triggered on every `push` or `pull_request` event to the `main` branch or `push` to any branch with `releases/*` pattern. 
   - The pipeline **ignores changes** to `README`, .`gitignore` or `screenshots/` and doesn't run on changes to these files for obvious reasons.
 
@@ -104,14 +104,14 @@ The pipeline includes the following steps:
     sudo mv kubectl /usr/local/bin/
     aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
     ```
-7. **Create MinIO service account**: Creates a Kubernetes service account and annotates it with the ARN of the MinIO IAM role. This is important for minio to access a specific S3 bucket. This service account used OIDC to assume the role assigned to the EKS cluster.
+7. **Create MinIO service account**: Creates a Kubernetes service account and annotates it with the ARN of the MinIO IAM role. This is important for **minio to access a specific S3 bucket**. This service account used OIDC to assume the role assigned to the EKS cluster.
     ```
     kubectl create serviceaccount minio-serviceaccount
     kubectl annotate serviceaccount minio-serviceaccount eks.amazonaws.com/role-arn=$MINIO_IAM_ROLE_ARN
     ```
 8. **Create MinIO credentials secret**: Creates a Kubernetes secret to hold the MinIO access key and secret key.
     ```
-    kubectl create secret generic minio-credentials
+    kubectl create secret generic minio-credentials --params VALUE
     ```
 9. **Deploy MinIO on EKS**: Deploys the MinIO service to the EKS cluster using the Kubernetes manifests.
     ```
