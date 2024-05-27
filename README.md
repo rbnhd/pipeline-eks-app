@@ -141,3 +141,7 @@ Contributions are welcome. Please open an issue to discuss your ideas or initiat
 ## License
 
 This project is licensed under the terms of the [CC0 1.0 Universal](./LICENSE).
+
+<br>
+
+**:bangbang: NOTE**:bangbang:: For Japanese documentation, refer [日本語-README.md](./日本語-README.md)
