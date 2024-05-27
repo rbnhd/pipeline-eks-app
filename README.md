@@ -1,5 +1,5 @@
 <!-- PROJECT SHIELDS -->
-[![AWS EKS CI/CD Pipeline](https://github.com/rbnhd/pipeiline-eks-app/actions/workflows/eks_create_deploy.yaml/badge.svg)](https://github.com/rbnhd/pipeiline-eks-app/actions/workflows/eks_create_deploy.yaml) &nbsp;&nbsp; [![License: CC0 1.0 Universal](https://img.shields.io/badge/License-CC%201.0%20-lightgrey.svg)](./LICENSE)
+[![AWS EKS CI/CD Pipeline](https://github.com/rbnhd/pipeiline-eks-app/actions/workflows/eks_create_deploy.yaml/badge.svg)](https://github.com/rbnhd/pipeiline-eks-app/actions/workflows/eks_create_deploy.yaml) &nbsp;&nbsp; [![License: CC0 1.0 Universal](https://img.shields.io/badge/License-CC%201.0%20-blue.svg)](./LICENSE)
 
 
 <!-- PROJECT LOGO -->
