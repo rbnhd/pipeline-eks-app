@@ -77,52 +77,52 @@ The pipeline includes the following steps:
 
 1. **Checkout**: Checks out the code from the GitHub repository.
 2. **Configure AWS Credentials**: Authenticates to AWS using the access key ID and secret access key stored in the repository secrets.
-    ```
+    ```yaml
     uses: aws-actions/configure-aws-credentials@v4
     ```
 3. **Setup Terraform**: Sets up Terraform on the runner.  (uses actions [hashicorp/setup-terraform](https://github.com/hashicorp/setup-terraform))
-    ```
+    ```yaml
     uses: hashicorp/setup-terraform@v3
     with:
       terraform_version: ${{ env.TF_VERSION }}
     ```
 4. **Terraform Init and validate**: Initializes Terraform, sets the backend S3 bucket for terraform state file, validates the Terraform configuration, and creates a Terraform plan.
-    ```
+    ```yaml
     terraform init -backend-config="bucket=${TF_VAR_state_bucket}"
     terraform validate
     terraform plan
     ```
 5. **Terraform Apply and get Output**: Applies the Terraform configuration to create the EKS cluster and associated resources on AWS. Captures the ARN of the MinIO IAM role and sets it as an environment variable.
-    ```
+    ```yaml
     terraform apply -auto-approve
     echo "MINIO_IAM_ROLE_ARN=$(terraform output -raw minio_role_arn)" >> $GITHUB_ENV
     ```
 6. **Install and configure kubectl**: Installs `kubectl` on the runner and updates the kubeconfig file with the information to access the EKS cluster.
-    ```
+    ```yaml
     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
     chmod +x kubectl
     sudo mv kubectl /usr/local/bin/
     aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
     ```
 7. **Create MinIO service account**: Creates a Kubernetes service account and annotates it with the ARN of the MinIO IAM role. This is important for **minio to access a specific S3 bucket**. This service account used OIDC to assume the role assigned to the EKS cluster.
-    ```
+    ```yaml
     kubectl create serviceaccount minio-serviceaccount
     kubectl annotate serviceaccount minio-serviceaccount eks.amazonaws.com/role-arn=$MINIO_IAM_ROLE_ARN
     ```
 8. **Create MinIO credentials secret**: Creates a Kubernetes secret to hold the MinIO access key and secret key.
-    ```
+    ```yaml
     kubectl create secret generic minio-credentials --params VALUE
     ```
 9. **Deploy MinIO on EKS**: Deploys the MinIO service to the EKS cluster using the Kubernetes manifests.
-    ```
+    ```yaml
     kubectl apply -f PATH_TO_MINIO_DEPLOYMENT_FILE
     ```
 10. **Get the endpoint of the load balancer created for the MinIO service**: Retrieves the endpoint of the load balancer that is created for the MinIO service.
-    ```
+    ```yaml
     kubectl get svc minio-service
     ```
 11. **Sleep & then Delete MinIO Service and Terraform Destroy**: Waits for a period, and then destroys the EKS cluster and associated resources using Terraform to avoid costs.. 
-    ```
+    ```yaml
     if: always() 
     run: sleep 600 && terraform destroy -auto-approve
     ```
