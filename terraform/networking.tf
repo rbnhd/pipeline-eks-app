@@ -17,7 +17,9 @@ resource "aws_subnet" "subnet1" {
   map_public_ip_on_launch = true # Enable auto-assign public IP
 
   tags = {
-    Name = "${var.name_prefix}-subnet1"
+    Name                                        = "${var.name_prefix}-subnet1"
+    "kubernetes.io/role/elb"                   = "1"
+    "kubernetes.io/cluster/${var.name_prefix}-cluster" = "shared"
   }
 }
 
@@ -29,7 +31,9 @@ resource "aws_subnet" "subnet2" {
   map_public_ip_on_launch = true # Enable auto-assign public IP
 
   tags = {
-    Name = "${var.name_prefix}-subnet2"
+    Name                                        = "${var.name_prefix}-subnet2"
+    "kubernetes.io/role/elb"                   = "1"
+    "kubernetes.io/cluster/${var.name_prefix}-cluster" = "shared"
   }
 }
 
@@ -84,6 +88,31 @@ resource "aws_security_group" "allow_http" {
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "MinIO default port"
+    from_port   = 9000
+    to_port     = 9000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "MinIO console port"
+    from_port   = 9001
+    to_port     = 9001
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Allow all traffic within the VPC for internal communication
+  ingress {
+    description = "All traffic within VPC"
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
   }
 
   egress {

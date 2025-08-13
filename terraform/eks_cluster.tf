@@ -35,13 +35,32 @@ resource "aws_eks_cluster" "eks_cluster" {
   role_arn = aws_iam_role.eks_cluster.arn
   version  = var.k8s_version
   vpc_config {
-    subnet_ids         = [aws_subnet.subnet1.id, aws_subnet.subnet2.id]
-    security_group_ids = [aws_security_group.allow_http.id]
+    subnet_ids              = [aws_subnet.subnet1.id, aws_subnet.subnet2.id]
+    security_group_ids      = [aws_security_group.allow_http.id]
+    endpoint_config {
+      public_access  = true
+      private_access = true
+    }
   }
   depends_on = [
     aws_iam_role_policy_attachment.eks_cluster_policy,
     aws_iam_role_policy_attachment.eks_vpc_resource_controller,
   ]
+}
+
+# Create OIDC identity provider for the EKS cluster
+data "tls_certificate" "eks_cluster" {
+  url = aws_eks_cluster.eks_cluster.identity[0].oidc[0].issuer
+}
+
+resource "aws_iam_openid_connect_provider" "eks_cluster" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks_cluster.certificates[0].sha1_fingerprint]
+  url             = aws_eks_cluster.eks_cluster.identity[0].oidc[0].issuer
+
+  tags = {
+    Name = "${var.name_prefix}-eks-oidc"
+  }
 }
 
 
@@ -184,4 +203,55 @@ resource "aws_iam_role_policy_attachment" "minio_s3_access" {
 output "minio_role_arn" {
   value       = aws_iam_role.minio_role.arn
   description = "The ARN of the IAM role associated with the MinIO service account."
+}
+
+
+
+
+#### AWS Load Balancer Controller IAM Role
+resource "aws_iam_role" "aws_load_balancer_controller" {
+  name = "${var.name_prefix}-aws-load-balancer-controller"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.eks_cluster.arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "${replace(aws_iam_openid_connect_provider.eks_cluster.url, "https://", "")}:sub": "system:serviceaccount:kube-system:aws-load-balancer-controller"
+            "${replace(aws_iam_openid_connect_provider.eks_cluster.url, "https://", "")}:aud": "sts.amazonaws.com"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${var.name_prefix}-aws-load-balancer-controller-role"
+  }
+}
+
+# Download AWS Load Balancer Controller IAM policy
+data "http" "aws_load_balancer_controller_policy" {
+  url = "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.7.2/docs/install/iam_policy.json"
+}
+
+resource "aws_iam_policy" "aws_load_balancer_controller" {
+  name   = "${var.name_prefix}-AWSLoadBalancerControllerIAMPolicy"
+  policy = data.http.aws_load_balancer_controller_policy.response_body
+}
+
+resource "aws_iam_role_policy_attachment" "aws_load_balancer_controller" {
+  policy_arn = aws_iam_policy.aws_load_balancer_controller.arn
+  role       = aws_iam_role.aws_load_balancer_controller.name
+}
+
+output "aws_load_balancer_controller_role_arn" {
+  value       = aws_iam_role.aws_load_balancer_controller.arn
+  description = "The ARN of the AWS Load Balancer Controller IAM role"
 }
