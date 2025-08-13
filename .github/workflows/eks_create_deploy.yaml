@@ -67,6 +67,7 @@ jobs:
         cd $TF_WORKSPACE
         terraform apply -auto-approve
         echo "MINIO_IAM_ROLE_ARN=$(terraform output -raw minio_role_arn)" >> $GITHUB_ENV
+        echo "AWS_LOAD_BALANCER_CONTROLLER_ROLE_ARN=$(terraform output -raw aws_load_balancer_controller_role_arn)" >> $GITHUB_ENV
         cd -
 
 
@@ -77,6 +78,32 @@ jobs:
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/
         aws eks update-kubeconfig --region $AWS_REGION --name ${{ env.TF_VAR_name_prefix }}-cluster
+
+    # Install AWS Load Balancer Controller
+    - name: Install AWS Load Balancer Controller
+      run: |
+        # Install Helm
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        
+        # Add EKS repository
+        helm repo add eks https://aws.github.io/eks-charts
+        helm repo update
+        
+        # Create service account for AWS Load Balancer Controller
+        kubectl create serviceaccount aws-load-balancer-controller -n kube-system
+        kubectl annotate serviceaccount aws-load-balancer-controller -n kube-system eks.amazonaws.com/role-arn=$AWS_LOAD_BALANCER_CONTROLLER_ROLE_ARN
+        
+        # Install AWS Load Balancer Controller
+        helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+          -n kube-system \
+          --set clusterName=${{ env.TF_VAR_name_prefix }}-cluster \
+          --set serviceAccount.create=false \
+          --set serviceAccount.name=aws-load-balancer-controller \
+          --set region=$AWS_REGION \
+          --set vpcId=$(kubectl get configmap aws-auth -n kube-system -o jsonpath='{.data.mapRoles}' | grep -o 'vpc-[a-zA-Z0-9]*' | head -1 || aws ec2 describe-vpcs --filters "Name=tag:Name,Values=${{ env.TF_VAR_name_prefix }}-vpc" --query "Vpcs[0].VpcId" --output text)
+        
+        # Wait for controller to be ready
+        kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=aws-load-balancer-controller -n kube-system --timeout=300s
 
 
     # Create a Kubernetes service account to be used by minio service; and associate it with the IAM role granted to EKS.
@@ -93,10 +120,26 @@ jobs:
 
     - name: Deploy MinIO on EKS
       run: |
-        kubectl apply -f ./k8s-app/minio.yaml
+        kubectl apply -f ./k8s-app/minio-improved.yaml
 
-    - name: Get the endpoint of the load balancer created for MinIO service
+    - name: Wait for MinIO deployment and get the endpoint
       run: |
+        # Wait for deployment to be ready
+        kubectl wait --for=condition=available --timeout=300s deployment/minio-deployment
+        
+        # Wait for load balancer to be provisioned
+        echo "Waiting for load balancer to be provisioned..."
+        for i in {1..30}; do
+          EXTERNAL_IP=$(kubectl get svc minio-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          if [ ! -z "$EXTERNAL_IP" ]; then
+            echo "MinIO is accessible at: http://$EXTERNAL_IP"
+            echo "MinIO Console is accessible at: http://$EXTERNAL_IP:9001"
+            break
+          fi
+          echo "Waiting for external IP... (attempt $i/30)"
+          sleep 30
+        done
+        
         kubectl get svc minio-service
 
 
